@@ -7,7 +7,8 @@ from wtforms import (
     DateTimeField,
     BooleanField
 )
-from wtforms.validators import DataRequired, AnyOf, URL
+from wtforms.validators import DataRequired, AnyOf, URL, length, Regexp
+
 
 
 class ShowForm(Form):
@@ -205,7 +206,7 @@ class ArtistForm(Form):
     phone = StringField(
         # TODO implement validation logic for phone numberi
       'phone',
-             validators=[DataRequired(), validators.Regexp( '^[0-9]{10}$', message='Invalid phone number')]
+             validators=[DataRequired(), Regexp( '^[0-9]{10}$', message='Invalid phone number')]
 
     )
     image_link = StringField(
