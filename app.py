@@ -87,7 +87,7 @@ def venues():
                 upcoming_shows = Show.query.join(Venue).filter(Venue.id == venue.id).filter(
                     Show.show_time > datetime.utcnow())
                 i['venues'].append(
-                    {'id': venue.id, 'name': venue.name, 'num_upcoming_shows': future_shows.count()})
+                    {'id': venue.id, 'name': venue.name, 'num_upcoming_shows': upcoming_shows.count()})
                 break
 
     return render_template('pages/venues.html', areas=data)
@@ -124,7 +124,7 @@ def show_venue(venue_id):
 
 @app.route('/venues/create', methods=['GET'])
 def create_venue_form():
-    form = VenueForm()
+    form = VenueForm(request.form)
     return render_template('forms/new_venue.html', form=form)
 
 
@@ -270,31 +270,22 @@ def edit_artist(artist_id):
 def edit_artist_submission(artist_id):
     # TODO: take values from the form submitted, and update existing
     # artist record with ID <artist_id> using the new attributes
-    error = False
-    try:
-        artist = Artist.query.get(artist_id)
-        artist.name = request.form['name']
-        artist.city = request.form['city']
-        artist.state = request.form['state']
-        artist.phone = request.form['phone']
-        artist.genres = request.form.getlist('genres')
-        artist.facebook_link = request.form['facebook_link']
-        artist.image_link = request.form['image_link']
-        artist.website = request.form['website']
-        artist.seeking_venue = True if 'seeking_venue' in request.form else False
-        artist.seeking_description = request.form['seeking_description']
+    aritist = Artist.query.get(artist_id)
+    form = ArtistForm(request.form)
+    if form.validate():
+        artist.name = form.name.data
+        artist.phone = form.phone.data
+        artist.city = form.city.data
+        artist.state = form.state.data
+        artist.genres = form.genres.data
+        artist.image_link = form.image_link.data
+        artist.website_link = form.website_link.data
+        artist.looking_for_venues = form.seeking_venue.data
+        artist.seeking_description = form.seeking_description.data
         db.session.commit()
-    except BaseException:
-        error = True
-        db.session.rollback()
-        print(sys.exc_info())
-    finally:
-        db.session.close()
-    if error:
-        flash('An error occurred. Artist could not be edited.')
+        return redirect(url_for('show_artist', artist_id=artist_id))
     else:
-        flash('Artist was successfully updated!')
-
+        flash(f'An error occurred. Please check the form properly and try again.')
     return redirect(url_for('show_artist', artist_id=artist_id))
 
 
@@ -321,31 +312,23 @@ def edit_venue(venue_id):
 def edit_venue_submission(venue_id):
     # TODO: take values from the form submitted, and update existing
     # venue record with ID <venue_id> using the new attributes
-    error = False
-    try:
-        venue = Venue.query.get(venue_id)
-        venue.name = request.form['name']
-        venue.city = request.form['city']
-        venue.state = request.form['state']
-        venue.phone = request.form['phone']
-        venue.genres = request.form.getlist('genres')
-        venue.facebook_link = request.form['facebook_link']
-        venue.image_link = request.form['image_link']
-        venue.website = request.form['website']
-        venue.seeking_talent = True if 'seeking_talent' in request.form else False
-        venue.seeking_description = request.form['seeking_description']
+    venue = Venue.query.get(venue_id)
+    form = VenueForm(request.form)
+    if form.validate():
+        venue.name = form.name.data
+        venue.city = form.city.data
+        venue.state = form.state.data
+        venue.phone = form.phone.data
+        venue.genres = form.genres.data
+        venue.facebook_link = form.facebook_link.data
+        venue.image_link = form.image_link.data
+        venue.website = form.website.data
+        venue.seeking_talent = form.seeking_talent.data
+        venue.seeking_description = form.seeking_description.data
         db.session.commit()
-    except BaseException:
-        error = True
-        db.session.rollback()
-        print(sys.exc_info())
-    finally:
-        db.session.close()
-    if error:
-        flash('An error occurred. Venue could not be edited.')
+        return redirect(url_for('show_venue', venue_id=venue_id))
     else:
-        flash('Venue was successfully updated!')
-
+        flash(f'An error occurred. Please check the form properly and try again.')
     return redirect(url_for('show_venue', venue_id=venue_id))
 
 #  Create Artist
@@ -445,6 +428,7 @@ def create_shows():
 def create_show_submission():
     # called to create new shows in the db, upon submitting new show listing
     # form
+    form = ShowForm(request.form)
     error = False
     try:
         artist_id = request.form['artist_id']
