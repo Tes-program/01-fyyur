@@ -132,49 +132,26 @@ def create_venue_form():
 def create_venue_submission():
     form = VenueForm(request.form)
     if form.validate():
-        error = False
+        add = request.form.get 
         try:
-            venue = Venue(
-                name=form.name.data,
-                city=form.city.data,
-                state=form.state.data,
-                address=form.address.data,
-                phone=form.phone.data,
-                genres=form.genres.data,
-                facebook_link=form.facebook_link.data,
-                image_link=form.image_link.data,
-                website=form.website.data,
-                seeking_talent=form.seeking_talent.data,
-                seeking_description=form.seeking_description.data
-            )
-            db.session.add(venue)
+            print(request.form.getlist('genres'))
+            new_venue = Venue(name=add('name'), city=add('city'), state=add('state'), address=add('address'),
+                              phone=add('phone'), genres=request.form.getlist('genres'), website_link=add('website_link'),
+                              facebook_link=add('facebook_link'),
+                              looking_for_talent=form.seeking_talent.data,
+                              seeking_description=add('seeking_description'))
+
+            db.session.add(new_venue)
             db.session.commit()
-        except BaseException:
-            error = True
+            flash('Venue ' + request.form['name'] + ' was listed!')
+        except:
             db.session.rollback()
-            print(sys.exc_info())
-        finally:
-            db.session.close()
-        if error:
-            flash(
-                'An error occurred. Venue ' +
-                form.name.data +
-                ' could not be listed.')
-        else:
-            flash(
-                'Venue ' +
-                request.form['name'] +
-                ' was successfully listed!')
+            flash('An error occurred. Venue ' + add('name') + ' could not be listed.')
+        return redirect(url_for('index'))
     else:
-        flash(
-            'An error occurred. Venue ' +
-            form.name.data +
-            ' could not be listed.')
-    return render_template('pages/home.html')
-
-    # on successful db insert, flash success
-
-
+        print(form.form_errors)
+        flash('An error occurred')
+        return redirect(url_for('index'))
 @app.route('/venues/<venue_id>', methods=['DELETE'])
 def delete_venue(venue_id):
     # SQLAlchemy ORM to delete a record. Handle cases where the session commit
@@ -195,11 +172,6 @@ def delete_venue(venue_id):
     else:
         flash('Venue was successfully deleted.')
     return render_template('pages/home.html')
-
-    # BONUS CHALLENGE: Implement a button to delete a Venue on a Venue Page, have it so that
-    # clicking that button delete it from the db then redirect the user to the
-    # homepage
-    return None
 
 #  Artists
 #  ----------------------------------------------------------------
